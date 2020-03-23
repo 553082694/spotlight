@@ -2,14 +2,28 @@ import ShaderLab from "./ShaderLab";
 
 export default class ShaderUtils {
     public static spotlight(node, mouseNode, sprite) {
-        let program = new cc.GLProgram()
+        let update = (isFirst) => {
+            let mouse = {
+                x: node.convertToNodeSpaceAR(mouseNode.parent.convertToWorldSpaceAR(mouseNode.position)).x + node.getContentSize().width / 2,
+                y: node.convertToNodeSpaceAR(mouseNode.parent.convertToWorldSpaceAR(mouseNode.position)).y + node.getContentSize().height / 2
+            };
+            program.use();
+            if (cc.sys.isNative) {
+                var glProgram_state = cc.GLProgramState.getOrCreateWithGLProgram(program);
+                glProgram_state.setUniformVec2("resolution", resolution);
+                glProgram_state.setUniformVec2("mouse", mouse);
+                if (isFirst) sprite._sgNode.setGLProgramState(glProgram_state);
+            } else {
+                let res = program.getUniformLocationForName("resolution");
+                let ms = program.getUniformLocationForName("mouse");
+                program.setUniformLocationWith2f(res, resolution.x, resolution.y);
+                program.setUniformLocationWith2f(ms, mouse.x, mouse.y);
+                if (isFirst) sprite._sgNode.setShaderProgram(program);
+            }
+        };
 
-        let resolution = { x: 0.0, y: 0.0 };
-        let mouse = { x: 0.0, y: 0.0 };
-        resolution.x = node.getContentSize().width;
-        resolution.y = node.getContentSize().height;
-        mouse.x = node.convertToNodeSpaceAR(mouseNode.parent.convertToWorldSpaceAR(mouseNode.position)).x + node.getContentSize().width / 2;
-        mouse.y = node.convertToNodeSpaceAR(mouseNode.parent.convertToWorldSpaceAR(mouseNode.position)).y + node.getContentSize().height / 2;
+        let resolution = { x: node.getContentSize().width, y: node.getContentSize().height };
+        let program = new cc.GLProgram();
         if (cc.sys.isNative) {
             program.initWithString(ShaderLab.Spotlight.vert, ShaderLab.Spotlight.frag);
         } else {
@@ -20,18 +34,8 @@ export default class ShaderUtils {
         }
         program.link();
         program.updateUniforms();
-        program.use();
-        if (cc.sys.isNative) {
-            var glProgram_state = cc.GLProgramState.getOrCreateWithGLProgram(program);
-            glProgram_state.setUniformVec2("resolution", resolution);
-            glProgram_state.setUniformVec2("mouse", mouse);
-            sprite._sgNode.setGLProgramState(glProgram_state);
-        } else {
-            let res = program.getUniformLocationForName("resolution");
-            let ms = program.getUniformLocationForName("mouse");
-            program.setUniformLocationWith2f(res, resolution.x, resolution.y);
-            program.setUniformLocationWith2f(ms, mouse.x, mouse.y);
-            sprite._sgNode.setShaderProgram(program);
-        }
+        update(true);
+
+        mouseNode.parent.on('rotation-changed', () => update(false));
     }
 }

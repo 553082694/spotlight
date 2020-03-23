@@ -19,9 +19,6 @@ export default class test extends cc.Component {
 
     start() {
         this.action.runAction(cc.repeatForever(cc.sequence(cc.rotateBy(1, 20), cc.rotateBy(2, -40), cc.rotateBy(1, 20))));
-    }
-
-    update() {
         ShaderUtils.spotlight(this.bg1, this.spotlight, this.bg1.getComponent(cc.Sprite));
         ShaderUtils.spotlight(this.bg2, this.spotlight, this.bg2.getComponent(cc.Sprite));
     }
